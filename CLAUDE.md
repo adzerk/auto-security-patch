@@ -9,24 +9,25 @@ After making any code change, always run `/format`, then `/test`, then `/review`
 ## Commands
 
 ```bash
-# Install (includes linting tools needed by Stage 5)
-pip install -e ".[dev]"
-pip install flake8 pylint
+# Install (first-time setup — requires pyenv + poetry)
+pyenv local 3.14.2
+poetry env use $(pyenv which python)
+poetry install --with dev
 
 # Run all tests
-python -m pytest tests/ -v
+poetry run pytest tests/ -v
 
 # Run a single test file
-python -m pytest tests/test_tools.py -v
+poetry run pytest tests/test_tools.py -v
 
 # Run a single test by name
-python -m pytest tests/test_tools.py::TestRunCommand::test_disallowed_bash_rejected -v
+poetry run pytest tests/test_tools.py::TestRunCommand::test_disallowed_bash_rejected -v
 
 # Run tests matching a keyword
-python -m pytest tests/ -v -k "ssrf or sandbox"
+poetry run pytest tests/ -v -k "ssrf or sandbox"
 
 # Run pipeline locally (dry run)
-DRY_RUN=true ANTHROPIC_API_KEY=... GITHUB_TOKEN=... VULNERABILITY_DATA='...' TARGET_REPO=org/repo python -m pipeline.run_pipeline
+DRY_RUN=true ANTHROPIC_API_KEY=... GITHUB_TOKEN=... VULNERABILITY_DATA='...' TARGET_REPO=org/repo poetry run python -m pipeline.run_pipeline
 ```
 
 ## Architecture
@@ -47,6 +48,10 @@ Stage 1 — Researcher          pipeline/stages/researcher.py
   ▼
 Stage 2 — Assessor            pipeline/stages/assessor.py
   │  read_file + search → PATCH / SUPPRESS / NEEDS_INVESTIGATION
+  ▼
+Stage 2b — Assessment Verifier  pipeline/stages/verifier.py
+  │  read_file + search_content → VERIFIED / PARTIALLY_VERIFIED / CONTRADICTED
+  │  CONTRADICTED overrides verdict → NEEDS_INVESTIGATION (non-fatal if verifier fails)
   │
   ├─ if PATCH ──────────────────────────────────────────────────┐
   │                                                              │
@@ -90,6 +95,7 @@ Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude A
 | `tests/test_models.py` | `Finding`, `Verdict`, `Severity`, `PipelineContext` dataclasses and enum coercion |
 | `tests/test_tools.py` | Sandbox path traversal, symlink rejection, `run_command` allowlist, SSRF/`web_fetch` — the security-critical tool layer |
 | `tests/test_normalizer.py` | Stage 0 normalizer: Bandit JSON, SARIF, freeform text inputs; low-confidence rejection; missing tool_use block |
+| `tests/test_verifier.py` | Stage 2b verifier: ref extraction, parse logic (VERIFIED/CONTRADICTED/NOT_FOUND), skip-when-no-refs, run_stage call contract |
 
 **Mocking pattern** (`test_normalizer.py`): patch `pipeline.normalizer.get_client` (not `pipeline.stages.base.get_client`) — the normalizer imports `get_client` by name, so the patch must target the module where it's used.
 

@@ -1,12 +1,12 @@
 [build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "auto-security-patch"
 version = "0.1.0"
 description = "AI-powered security vulnerability remediation pipeline"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "anthropic>=0.42.0",
     "pydantic>=2.0",
@@ -17,14 +17,12 @@ dependencies = [
     "beautifulsoup4>=4.12",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "black>=24.0",
-]
+[tool.poetry]
+packages = [{include = "pipeline"}]
+include = ["agents/*.md"]
 
-[tool.setuptools.packages.find]
-include = ["pipeline*"]
-
-[tool.setuptools.package-data]
-pipeline = ["../agents/*.md"]
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+black = ">=24.0"
+flake8 = ">=7.0"
+pylint = ">=3.0"

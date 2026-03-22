@@ -13,12 +13,14 @@ flowchart TD
     S0["Stage 0 — Normalizer\nExtracts canonical Finding\nfile · line · CWE · severity"]
     S1["Stage 1 — Researcher\nFetches CWE page, OWASP docs,\nreal-world CVEs"]
     S2["Stage 2 — Assessor\nReads actual code, checks auth\nmiddleware, call paths"]
+    S2b["Stage 2b — Assessment Verifier\nReads every cited file:line ref\nand checks code matches claims"]
 
-    S0 --> S1 --> S2
+    S0 --> S1 --> S2 --> S2b
 
-    S2 -->|SUPPRESS| S6
-    S2 -->|NEEDS_INVESTIGATION| S6
-    S2 -->|PATCH| S3
+    S2b -->|SUPPRESS| S6
+    S2b -->|NEEDS_INVESTIGATION| S6
+    S2b -->|CONTRADICTED → override| S6
+    S2b -->|PATCH| S3
 
     subgraph fix ["Fix loop (max 2 attempts)"]
         S3["Stage 3 — Explorer\nDiscovers related files,\nexisting safe patterns"] --> S4
@@ -80,7 +82,9 @@ jobs:
 ### Local dry run
 
 ```bash
-pip install -e ".[dev]" && pip install flake8 pylint
+pyenv local 3.14.2
+poetry env use $(pyenv which python)
+poetry install --with dev
 
 export ANTHROPIC_API_KEY=...
 export GITHUB_TOKEN=...          # needs write access to target repo
@@ -88,7 +92,7 @@ export TARGET_REPO=org/repo
 export DRY_RUN=true
 export VULNERABILITY_DATA='{"test_id":"B608","filename":"app.py","line_number":42,...}'
 
-python -m pipeline.run_pipeline
+poetry run python -m pipeline.run_pipeline
 # Outputs to pipeline-output/ — no PRs or issues created
 ```
 
