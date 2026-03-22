@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow
+
+After making any code change, always run `/test`, then `/review`, then `/push` — in that order.
+
 ## Commands
 
 ```bash
