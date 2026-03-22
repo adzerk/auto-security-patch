@@ -1,0 +1,16 @@
+{
+  "test_id": "B608",
+  "test_name": "hardcoded_sql_expressions",
+  "issue_severity": "MEDIUM",
+  "issue_confidence": "MEDIUM",
+  "issue_cwe": {
+    "id": 89,
+    "link": "https://cwe.mitre.org/data/definitions/89.html"
+  },
+  "issue_text": "Possible SQL injection vector through string-based query construction.",
+  "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html",
+  "filename": "app.py",
+  "line_number": 42,
+  "line_range": [42, 43],
+  "code": "    query = \"SELECT * FROM users WHERE id = '\" + user_id + \"'\"\n    result = db.execute(query)\n"
+}

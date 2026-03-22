@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ExampleScanner",
+          "version": "1.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CWE-78",
+          "level": "error",
+          "message": {
+            "text": "OS command injection via user-controlled input passed to subprocess.call with shell=True"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app.py"
+                },
+                "region": {
+                  "startLine": 134
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

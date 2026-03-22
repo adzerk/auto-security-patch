@@ -1,0 +1,79 @@
+name: Security Patch Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      vulnerability_data:
+        description: 'Raw vulnerability blob (any format)'
+        required: true
+        type: string
+      target_repo:
+        description: 'Target repo to patch (org/repo)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run — log output without creating PRs/issues'
+        required: false
+        type: boolean
+        default: false
+
+  workflow_call:
+    inputs:
+      vulnerability_data:
+        required: true
+        type: string
+      target_repo:
+        required: true
+        type: string
+      dry_run:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+      GH_PAT:
+        required: true
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install flake8 pylint
+
+      - name: Install gh CLI
+        run: |
+          if ! command -v gh &> /dev/null; then
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt-get update && sudo apt-get install gh -y
+          fi
+
+      - name: Run pipeline
+        run: python -m pipeline.run_pipeline
+        env:
+          VULNERABILITY_DATA: ${{ inputs.vulnerability_data }}
+          TARGET_REPO: ${{ inputs.target_repo }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-logs
+          path: pipeline-output/

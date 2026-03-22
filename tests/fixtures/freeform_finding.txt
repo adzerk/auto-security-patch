@@ -1,0 +1,4 @@
+Security scan found a hardcoded database password in db.py at line 15.
+The variable DB_PASSWORD is set to "admin123" which is a weak, hardcoded credential.
+This is a HIGH severity issue (CWE-798: Use of Hard-coded Credentials).
+Recommend using environment variables or a secrets manager instead.
