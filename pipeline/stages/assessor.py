@@ -112,6 +112,11 @@ def _parse_assessment(output: str) -> ExploitabilityAssessment:
     if supp_match:
         result.suppression_instructions = supp_match.group(1).strip()
 
+    # Extract suppression action (if SUPPRESS)
+    action_match = re.search(r"^SUPPRESSION_ACTION:\s*(\S+)", body, re.MULTILINE)
+    if action_match:
+        result.suppression_action = action_match.group(1).strip()
+
     # Extract open questions (if NEEDS_INVESTIGATION)
     oq_match = re.search(
         r"^OPEN_QUESTIONS:\s*\n(.*?)(?=\nEXPLOITABILITY_ASSESSMENT_END|\Z)",

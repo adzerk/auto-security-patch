@@ -15,6 +15,13 @@ Based on the stage outputs provided, write a GitHub Markdown body that includes:
 5. **Diff** — the patch in a collapsible `<details>` block
 6. **Caveats** — note this was AI-generated, list the confidence level, suggest what the reviewer should verify
 
+### For a Suppression Pull Request (SUPPRESS verdict with code change):
+1. **Security Finding** header with rule, severity, file, line, CWE
+2. **Assessment** — why this is not exploitable (from Stage 2)
+3. **What Changed** — the suppression marker(s) added (from Stage 4)
+4. **Diff** — the patch in a collapsible `<details>` block
+5. **Caveats** — note this was AI-generated, reviewer should verify the suppression reasoning is correct
+
 ### For a Suppression Issue (SUPPRESS verdict):
 1. **Security Finding** header
 2. **Assessment** — why this is not exploitable (from Stage 2)

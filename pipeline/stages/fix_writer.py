@@ -54,6 +54,7 @@ Write a fix for the following vulnerability.
 FINDING DETAILS:
 FILE: {finding.file_path}
 LINE: {finding.line_number}
+VERDICT: {assessment.verdict.value}
 REPO_PATH: .
 """
 

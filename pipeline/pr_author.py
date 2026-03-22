@@ -59,6 +59,8 @@ def generate_body(ctx: PipelineContext, *, output_dir: str) -> str:
     # Determine what kind of body to write
     if verdict == Verdict.PATCH and not ctx.pipeline_failed:
         body_type = "pull request"
+    elif verdict == Verdict.SUPPRESS and ctx.fix:
+        body_type = "suppression pull request"
     elif verdict == Verdict.SUPPRESS:
         body_type = "suppression issue"
     elif verdict == Verdict.NEEDS_INVESTIGATION:
@@ -96,6 +98,8 @@ def build_title(ctx: PipelineContext) -> str:
         return f"[Security] Pipeline failed for {finding.title} in {short_file}"
     elif verdict == Verdict.PATCH:
         return f"[Auto-Fix] {finding.title} in {short_file}"
+    elif verdict == Verdict.SUPPRESS and ctx.fix:
+        return f"[Suppress] {finding.title} in {short_file} — not exploitable"
     elif verdict == Verdict.SUPPRESS:
         return f"[Security] Suppress {finding.title} in {short_file} — not exploitable"
     elif verdict == Verdict.NEEDS_INVESTIGATION:
@@ -116,7 +120,7 @@ def build_labels(ctx: PipelineContext) -> list[str]:
     elif verdict == Verdict.PATCH:
         labels.append("automated-fix")
     elif verdict == Verdict.SUPPRESS:
-        labels.append("wontfix")
+        labels.append("suppression" if ctx.fix else "wontfix")
     elif verdict == Verdict.NEEDS_INVESTIGATION:
         labels.append("needs-triage")
 
@@ -135,5 +139,10 @@ def build_branch_name(ctx: PipelineContext) -> str:
 
     title_part = _sanitize(finding.title.lower().replace(" ", "-"))
     file_part = _sanitize(finding.file_path.replace("/", "_"))
-    branch = f"auto-fix/{title_part}-{file_part}-{finding.line_number}"
+    prefix = (
+        "auto-suppress"
+        if ctx.assessment and ctx.assessment.verdict == Verdict.SUPPRESS
+        else "auto-fix"
+    )
+    branch = f"{prefix}/{title_part}-{file_part}-{finding.line_number}"
     return branch[:200]

@@ -69,6 +69,7 @@ class ExploitabilityAssessment:
     confidence: Confidence = Confidence.LOW
     reasoning: str = ""
     suppression_instructions: str = ""
+    suppression_action: str = ""  # CODE_CHANGE or INFORMATIONAL (SUPPRESS only)
     open_questions: str = ""
     raw_output: str = ""
 

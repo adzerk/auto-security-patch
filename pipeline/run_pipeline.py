@@ -185,13 +185,16 @@ def main() -> None:
                     break
 
         # --------------------------------------------------------------
-        # Stages 3–5: Only if verdict is PATCH
+        # Stages 3–5: PATCH, or SUPPRESS that requires a code change
         # --------------------------------------------------------------
-        if (
-            not ctx.pipeline_failed
-            and ctx.assessment
-            and ctx.assessment.verdict == Verdict.PATCH
-        ):
+        needs_code_change = ctx.assessment is not None and (
+            ctx.assessment.verdict == Verdict.PATCH
+            or (
+                ctx.assessment.verdict == Verdict.SUPPRESS
+                and ctx.assessment.suppression_action == "CODE_CHANGE"
+            )
+        )
+        if not ctx.pipeline_failed and needs_code_change:
             # Stage 3: Explore
             logger.info("=== Stage 3: Codebase Explorer ===")
             try:
@@ -298,7 +301,7 @@ def main() -> None:
                 body=body,
             )
             _write_dry_run_output(title, body, labels, verdict, ctx)
-        elif ctx.pipeline_failed or verdict != Verdict.PATCH:
+        elif ctx.pipeline_failed or not needs_code_change:
             # Create issue
             if gh_token:
                 try:
@@ -321,10 +324,13 @@ def main() -> None:
             branch = build_branch_name(ctx)
             try:
                 sandbox.create_branch(branch)
-                sandbox.commit(
-                    f"fix: remediate {ctx.finding.title} in {ctx.finding.file_path}",
-                    files=ctx.fix.changed_files or None,
-                )
+                if ctx.assessment.verdict == Verdict.SUPPRESS:
+                    commit_msg = f"suppress: add suppression marker for {ctx.finding.title} in {ctx.finding.file_path}"
+                else:
+                    commit_msg = (
+                        f"fix: remediate {ctx.finding.title} in {ctx.finding.file_path}"
+                    )
+                sandbox.commit(commit_msg, files=ctx.fix.changed_files or None)
                 push_ok, push_err = sandbox.push(branch)
                 if not push_ok:
                     raise RuntimeError(f"git push failed: {push_err}")
