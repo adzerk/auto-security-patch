@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -16,6 +16,12 @@ class Confidence(str, Enum):
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
+
+
+class VerificationVerdict(str, Enum):
+    VERIFIED = "VERIFIED"
+    PARTIALLY_VERIFIED = "PARTIALLY_VERIFIED"
+    CONTRADICTED = "CONTRADICTED"
 
 
 class Severity(str, Enum):
@@ -64,6 +70,29 @@ class ExploitabilityAssessment:
     reasoning: str = ""
     suppression_instructions: str = ""
     open_questions: str = ""
+    raw_output: str = ""
+
+
+@dataclass
+class ReferenceCheck:
+    """Result for a single file:line citation in the assessor's REASONING."""
+
+    ref: str
+    status: str  # CONFIRMED | CONTRADICTED | NOT_FOUND
+    note: str = ""
+
+
+@dataclass
+class AssessmentVerification:
+    """Output of the Assessment Verifier (Stage 2b)."""
+
+    verdict: VerificationVerdict = VerificationVerdict.VERIFIED
+    references_checked: int = 0
+    confirmed_count: int = 0
+    contradicted_count: int = 0
+    not_found_count: int = 0
+    contradiction_notes: str = ""
+    reference_details: list = field(default_factory=list)  # list[ReferenceCheck]
     raw_output: str = ""
 
 
@@ -120,6 +149,7 @@ class PipelineContext:
     finding: Finding | None = None
     research: ResearchReport | None = None
     assessment: ExploitabilityAssessment | None = None
+    verification: AssessmentVerification | None = None
     exploration: CodebaseExploration | None = None
     fix: FixResult | None = None
     validation: ValidationResult | None = None

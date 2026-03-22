@@ -1,12 +1,14 @@
 """Tests for pipeline data models."""
 
 from pipeline.models import (
+    AssessmentVerification,
     Confidence,
     ExploitabilityAssessment,
     Finding,
     PipelineContext,
     Severity,
     Verdict,
+    VerificationVerdict,
 )
 
 
@@ -58,3 +60,24 @@ def test_assessment_defaults():
     a = ExploitabilityAssessment()
     assert a.verdict == Verdict.NEEDS_INVESTIGATION
     assert a.confidence == Confidence.LOW
+
+
+def test_verification_verdict_enum():
+    assert VerificationVerdict("VERIFIED") == VerificationVerdict.VERIFIED
+    assert (
+        VerificationVerdict("PARTIALLY_VERIFIED")
+        == VerificationVerdict.PARTIALLY_VERIFIED
+    )
+    assert VerificationVerdict("CONTRADICTED") == VerificationVerdict.CONTRADICTED
+
+
+def test_assessment_verification_defaults():
+    v = AssessmentVerification()
+    assert v.verdict == VerificationVerdict.VERIFIED
+    assert v.references_checked == 0
+    assert v.reference_details == []
+
+
+def test_pipeline_context_has_verification_field():
+    ctx = PipelineContext()
+    assert ctx.verification is None

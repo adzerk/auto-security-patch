@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from pipeline.github_client import GitHubClient
-from pipeline.models import PipelineContext, PRResult, Verdict
+from pipeline.models import PipelineContext, PRResult, Verdict, VerificationVerdict
 from pipeline.normalizer import normalize
 from pipeline.pr_author import (
     build_branch_name,
@@ -23,6 +23,7 @@ from pipeline.pr_author import (
 )
 from pipeline.sandbox import RepoSandbox
 from pipeline.stages.assessor import assess
+from pipeline.stages.verifier import verify_assessment
 from pipeline.stages.explorer import explore
 from pipeline.stages.fix_writer import write_fix
 from pipeline.stages.researcher import research
@@ -125,6 +126,45 @@ def main() -> None:
                 logger.error("Assessor failed: %s", e)
                 ctx.pipeline_failed = True
                 ctx.failure_reason = f"Stage 2 (Assessor) failed: {e}"
+
+        # --------------------------------------------------------------
+        # Stage 2b: Assessment Verifier
+        # --------------------------------------------------------------
+        if not ctx.pipeline_failed:
+            logger.info("=== Stage 2b: Assessment Verifier ===")
+            try:
+                ctx.verification = verify_assessment(
+                    ctx.finding,
+                    ctx.assessment,
+                    sandbox_root=sandbox_root,
+                    output_dir=OUTPUT_DIR,
+                )
+                logger.info(
+                    "Verification: %s (%d refs checked, %d contradicted)",
+                    ctx.verification.verdict.value,
+                    ctx.verification.references_checked,
+                    ctx.verification.contradicted_count,
+                )
+                if ctx.verification.verdict == VerificationVerdict.CONTRADICTED:
+                    original_verdict = ctx.assessment.verdict
+                    ctx.assessment.verdict = Verdict.NEEDS_INVESTIGATION
+                    ctx.assessment.reasoning = (
+                        f"[ASSESSMENT OVERRIDDEN by Stage 2b Verifier: "
+                        f"original verdict was {original_verdict.value}. "
+                        f"Contradictions:\n{ctx.verification.contradiction_notes}]\n\n"
+                        + ctx.assessment.reasoning
+                    )
+                    logger.warning(
+                        "Assessment overridden from %s to NEEDS_INVESTIGATION",
+                        original_verdict.value,
+                    )
+            except Exception as e:
+                logger.error("Assessment Verifier failed: %s", e)
+                ctx.verification = None
+                logger.warning(
+                    "Proceeding with unverified assessment: %s",
+                    ctx.assessment.verdict.value,
+                )
 
         # --------------------------------------------------------------
         # Stages 3–5: Only if verdict is PATCH

@@ -118,6 +118,7 @@ STAGE_TOOLS: dict[str, list[str]] = {
     "normalizer": [],
     "researcher": ["web_search", "web_fetch"],
     "assessor": ["read_file", "list_files", "search_content"],
+    "assessment_verifier": ["read_file", "search_content"],
     "explorer": ["read_file", "list_files", "search_content"],
     "fix_writer": ["read_file"],
     "validator": ["read_file", "run_command"],
