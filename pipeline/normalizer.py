@@ -115,7 +115,10 @@ def normalize(raw_blob: str, *, output_dir: str = "pipeline-output") -> Finding:
                 "id": response.id,
                 "model": response.model,
                 "content": [
-                    {"type": b.type, **({"input": b.input} if b.type == "tool_use" else {})}
+                    {
+                        "type": b.type,
+                        **({"input": b.input} if b.type == "tool_use" else {}),
+                    }
                     for b in response.content
                 ],
             },

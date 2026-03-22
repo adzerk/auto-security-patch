@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Workflow
 
-After making any code change, always run `/test`, then `/review`, then `/push` — in that order.
+After making any code change, always run `/format`, then `/test`, then `/review`, then `/push` — in that order.
 
 ## Commands
 
@@ -100,4 +100,4 @@ Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude A
 | Secret | Purpose |
 |--------|---------|
 | `ANTHROPIC_API_KEY` | Claude API calls |
-| `GH_PAT` | Push branches + create PRs/issues on target repo (needs `contents:write`, `pull-requests:write`, `issues:write`) |
+| `REPO_READ_TOKEN` | Push branches + create PRs/issues on target repo (needs `contents:write`, `pull-requests:write`, `issues:write`) |

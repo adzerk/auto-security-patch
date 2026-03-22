@@ -20,22 +20,32 @@ def generate_body(ctx: PipelineContext, *, output_dir: str) -> str:
     verdict = ctx.assessment.verdict if ctx.assessment else Verdict.NEEDS_INVESTIGATION
 
     # Build context from all stages
-    sections = [f"FINDING: {finding.title} in {finding.file_path}:{finding.line_number}"]
+    sections = [
+        f"FINDING: {finding.title} in {finding.file_path}:{finding.line_number}"
+    ]
     sections.append(f"SEVERITY: {finding.severity}")
     sections.append(f"CWE: {finding.cwe_id or 'N/A'}")
     sections.append(f"VERDICT: {verdict.value}")
 
     if ctx.research:
-        sections.append(f"\n--- STAGE 1: VULNERABILITY RESEARCH ---\n{ctx.research.raw_output}")
+        sections.append(
+            f"\n--- STAGE 1: VULNERABILITY RESEARCH ---\n{ctx.research.raw_output}"
+        )
 
     if ctx.assessment:
-        sections.append(f"\n--- STAGE 2: EXPLOITABILITY ASSESSMENT ---\n{ctx.assessment.raw_output}")
+        sections.append(
+            f"\n--- STAGE 2: EXPLOITABILITY ASSESSMENT ---\n{ctx.assessment.raw_output}"
+        )
 
     if ctx.exploration:
-        sections.append(f"\n--- STAGE 3: CODEBASE EXPLORATION ---\n{ctx.exploration.raw_output}")
+        sections.append(
+            f"\n--- STAGE 3: CODEBASE EXPLORATION ---\n{ctx.exploration.raw_output}"
+        )
 
     if ctx.fix:
-        sections.append(f"\n--- STAGE 4: FIX ---\nCHANGE_SUMMARY: {ctx.fix.change_summary}")
+        sections.append(
+            f"\n--- STAGE 4: FIX ---\nCHANGE_SUMMARY: {ctx.fix.change_summary}"
+        )
         sections.append(f"PATCH:\n{ctx.fix.patch}")
 
     if ctx.validation:

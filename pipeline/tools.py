@@ -37,6 +37,7 @@ ALLOWED_COMMANDS: dict[str, callable] = {
 # Path sandboxing
 # ---------------------------------------------------------------------------
 
+
 def _resolve_sandboxed(path: str, sandbox_root: str) -> str:
     """Resolve *path* relative to *sandbox_root* and reject traversal."""
     resolved = os.path.realpath(os.path.join(sandbox_root, path))
@@ -49,6 +50,7 @@ def _resolve_sandboxed(path: str, sandbox_root: str) -> str:
 # ---------------------------------------------------------------------------
 # URL safety check (SSRF prevention)
 # ---------------------------------------------------------------------------
+
 
 def _is_safe_url(url: str) -> tuple[bool, str]:
     """Return (True, "") if *url* is safe to fetch, else (False, reason).
@@ -81,7 +83,10 @@ def _is_safe_url(url: str) -> tuple[bool, str]:
         except ValueError:
             continue
         if ip.is_loopback or ip.is_private or ip.is_link_local:
-            return False, f"Hostname {hostname!r} resolves to blocked address: {addr_str}"
+            return (
+                False,
+                f"Hostname {hostname!r} resolves to blocked address: {addr_str}",
+            )
 
     return True, ""
 
@@ -89,6 +94,7 @@ def _is_safe_url(url: str) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Filesystem tools
 # ---------------------------------------------------------------------------
+
 
 def read_file(path: str, *, sandbox_root: str) -> str:
     """Read a file inside the sandbox. Returns the file content as a string."""
@@ -100,7 +106,9 @@ def read_file(path: str, *, sandbox_root: str) -> str:
     except IsADirectoryError:
         return f"Error: {path} is a directory, not a file"
     if len(content) > MAX_READ_BYTES:
-        content = content[:MAX_READ_BYTES] + f"\n... (truncated at {MAX_READ_BYTES} bytes)"
+        content = (
+            content[:MAX_READ_BYTES] + f"\n... (truncated at {MAX_READ_BYTES} bytes)"
+        )
     return content
 
 
@@ -167,6 +175,7 @@ def search_content(
 # Web tools (Stage 1 only)
 # ---------------------------------------------------------------------------
 
+
 def web_search(query: str) -> str:
     """Search the web using DuckDuckGo. Returns a summary of results."""
     try:
@@ -219,6 +228,7 @@ def web_fetch(url: str) -> str:
 # ---------------------------------------------------------------------------
 # Command execution (Stage 5 only)
 # ---------------------------------------------------------------------------
+
 
 def run_command(check: str, path: str, *, sandbox_root: str) -> str:
     """Run an allowlisted check on a sandboxed file.

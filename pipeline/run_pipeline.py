@@ -15,7 +15,12 @@ from pathlib import Path
 from pipeline.github_client import GitHubClient
 from pipeline.models import PipelineContext, PRResult, Verdict
 from pipeline.normalizer import normalize
-from pipeline.pr_author import build_branch_name, build_labels, build_title, generate_body
+from pipeline.pr_author import (
+    build_branch_name,
+    build_labels,
+    build_title,
+    generate_body,
+)
 from pipeline.sandbox import RepoSandbox
 from pipeline.stages.assessor import assess
 from pipeline.stages.explorer import explore
@@ -202,7 +207,9 @@ def main() -> None:
                         fix_succeeded = True
                         break
                     else:
-                        previous_errors = ctx.validation.errors or ctx.validation.raw_output
+                        previous_errors = (
+                            ctx.validation.errors or ctx.validation.raw_output
+                        )
                         logger.warning("Validation FAILED: %s", previous_errors)
 
                 if not fix_succeeded:
@@ -244,7 +251,10 @@ def main() -> None:
                     gh = GitHubClient(gh_token, target_repo)
                     url = gh.create_issue(title=title, body=body, labels=labels)
                     ctx.pr_result = PRResult(
-                        action="ISSUE_CREATED", url=url, title=title, body=body,
+                        action="ISSUE_CREATED",
+                        url=url,
+                        title=title,
+                        body=body,
                     )
                 except Exception as e:
                     logger.error("Failed to create issue: %s", e)
@@ -268,10 +278,18 @@ def main() -> None:
                 gh = GitHubClient(gh_token, target_repo)
                 base = gh.get_default_branch()
                 url = gh.create_pr(
-                    title=title, body=body, head=branch, base=base, labels=labels,
+                    title=title,
+                    body=body,
+                    head=branch,
+                    base=base,
+                    labels=labels,
                 )
                 ctx.pr_result = PRResult(
-                    action="PR_CREATED", url=url, branch=branch, title=title, body=body,
+                    action="PR_CREATED",
+                    url=url,
+                    branch=branch,
+                    title=title,
+                    body=body,
                 )
             except Exception as e:
                 logger.error("Failed to create PR: %s", e)

@@ -90,6 +90,7 @@ class TestRunCommand:
         # Valid Python file: py_compile succeeds silently → "(no output)" or empty
         # If python is not on PATH this returns "Error: command not found"
         import shutil
+
         if shutil.which("python"):
             assert result in ("(no output)", "") or "error" not in result.lower()
         else:
@@ -127,7 +128,10 @@ class TestWebFetchSSRF:
         """Link-local addresses (169.254.x.x) must be rejected even over HTTPS."""
         # Patch socket.getaddrinfo to simulate resolving to 169.254.169.254
         import socket
-        fake_addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("169.254.169.254", 0))]
+
+        fake_addrinfo = [
+            (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("169.254.169.254", 0))
+        ]
         with patch("pipeline.tools.socket.getaddrinfo", return_value=fake_addrinfo):
             safe, reason = _is_safe_url("https://metadata.internal/")
         assert not safe
@@ -136,7 +140,10 @@ class TestWebFetchSSRF:
     def test_private_ip_rejected(self):
         """RFC 1918 addresses must be rejected."""
         import socket
-        fake_addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("192.168.1.1", 0))]
+
+        fake_addrinfo = [
+            (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("192.168.1.1", 0))
+        ]
         with patch("pipeline.tools.socket.getaddrinfo", return_value=fake_addrinfo):
             safe, reason = _is_safe_url("https://internal.corp/")
         assert not safe
@@ -145,6 +152,7 @@ class TestWebFetchSSRF:
     def test_loopback_ip_rejected(self):
         """Loopback addresses must be rejected."""
         import socket
+
         fake_addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("127.0.0.1", 0))]
         with patch("pipeline.tools.socket.getaddrinfo", return_value=fake_addrinfo):
             safe, reason = _is_safe_url("https://localhost/")
@@ -160,6 +168,7 @@ class TestWebFetchSSRF:
     def test_web_fetch_rejects_private_ip(self):
         """web_fetch must return an error string when hostname resolves to private IP."""
         import socket
+
         fake_addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("10.0.0.1", 0))]
         with patch("pipeline.tools.socket.getaddrinfo", return_value=fake_addrinfo):
             result = web_fetch("https://internal.example.com/page")

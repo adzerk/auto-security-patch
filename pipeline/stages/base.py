@@ -88,18 +88,16 @@ def run_stage(
             messages=messages,
             tools=tools,
         )
-        all_raw.append({"round": round_num + 1, "response": _serialize_response(response)})
+        all_raw.append(
+            {"round": round_num + 1, "response": _serialize_response(response)}
+        )
 
         # Collect text blocks
-        text_parts = [
-            block.text for block in response.content if block.type == "text"
-        ]
+        text_parts = [block.text for block in response.content if block.type == "text"]
         all_text.extend(text_parts)
 
         # Check for tool use
-        tool_blocks = [
-            block for block in response.content if block.type == "tool_use"
-        ]
+        tool_blocks = [block for block in response.content if block.type == "tool_use"]
 
         if response.stop_reason == "end_turn" or not tool_blocks:
             break
@@ -192,9 +190,7 @@ def _serialize_response(response: anthropic.types.Message) -> dict:
             "input_tokens": response.usage.input_tokens,
             "output_tokens": response.usage.output_tokens,
         },
-        "content": [
-            _serialize_block(b) for b in response.content
-        ],
+        "content": [_serialize_block(b) for b in response.content],
     }
 
 

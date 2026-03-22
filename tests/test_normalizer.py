@@ -39,15 +39,17 @@ class TestNormalizerParsing:
 
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.messages.create.return_value = _mock_tool_response({
-            "file_path": "app.py",
-            "line_number": 42,
-            "cwe_id": "CWE-89",
-            "severity": "MEDIUM",
-            "title": "SQL Injection",
-            "description": "Possible SQL injection via string-based query construction.",
-            "confidence": "high",
-        })
+        mock_client.messages.create.return_value = _mock_tool_response(
+            {
+                "file_path": "app.py",
+                "line_number": 42,
+                "cwe_id": "CWE-89",
+                "severity": "MEDIUM",
+                "title": "SQL Injection",
+                "description": "Possible SQL injection via string-based query construction.",
+                "confidence": "high",
+            }
+        )
 
         finding = normalize(raw, output_dir=str(tmp_path))
         assert finding.file_path == "app.py"
@@ -61,15 +63,17 @@ class TestNormalizerParsing:
 
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.messages.create.return_value = _mock_tool_response({
-            "file_path": "app.py",
-            "line_number": 134,
-            "cwe_id": "CWE-78",
-            "severity": "HIGH",
-            "title": "OS Command Injection",
-            "description": "OS command injection via user-controlled input.",
-            "confidence": "high",
-        })
+        mock_client.messages.create.return_value = _mock_tool_response(
+            {
+                "file_path": "app.py",
+                "line_number": 134,
+                "cwe_id": "CWE-78",
+                "severity": "HIGH",
+                "title": "OS Command Injection",
+                "description": "OS command injection via user-controlled input.",
+                "confidence": "high",
+            }
+        )
 
         finding = normalize(raw, output_dir=str(tmp_path))
         assert finding.file_path == "app.py"
@@ -82,15 +86,17 @@ class TestNormalizerParsing:
 
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.messages.create.return_value = _mock_tool_response({
-            "file_path": "db.py",
-            "line_number": 15,
-            "cwe_id": "CWE-798",
-            "severity": "HIGH",
-            "title": "Hardcoded Credentials",
-            "description": "Hardcoded database password found.",
-            "confidence": "high",
-        })
+        mock_client.messages.create.return_value = _mock_tool_response(
+            {
+                "file_path": "db.py",
+                "line_number": 15,
+                "cwe_id": "CWE-798",
+                "severity": "HIGH",
+                "title": "Hardcoded Credentials",
+                "description": "Hardcoded database password found.",
+                "confidence": "high",
+            }
+        )
 
         finding = normalize(raw, output_dir=str(tmp_path))
         assert finding.file_path == "db.py"
@@ -100,14 +106,16 @@ class TestNormalizerParsing:
     def test_low_confidence_raises(self, mock_get_client, tmp_path):
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.messages.create.return_value = _mock_tool_response({
-            "file_path": "unknown",
-            "line_number": 0,
-            "severity": "LOW",
-            "title": "Unknown",
-            "description": "Could not parse",
-            "confidence": "low",
-        })
+        mock_client.messages.create.return_value = _mock_tool_response(
+            {
+                "file_path": "unknown",
+                "line_number": 0,
+                "severity": "LOW",
+                "title": "Unknown",
+                "description": "Could not parse",
+                "confidence": "low",
+            }
+        )
 
         with pytest.raises(ValueError, match="low confidence"):
             normalize("some garbage data", output_dir=str(tmp_path))
@@ -136,14 +144,16 @@ class TestNormalizerParsing:
 
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.messages.create.return_value = _mock_tool_response({
-            "file_path": "x.py",
-            "line_number": 1,
-            "severity": "LOW",
-            "title": "Test",
-            "description": "Test",
-            "confidence": "high",
-        })
+        mock_client.messages.create.return_value = _mock_tool_response(
+            {
+                "file_path": "x.py",
+                "line_number": 1,
+                "severity": "LOW",
+                "title": "Test",
+                "description": "Test",
+                "confidence": "high",
+            }
+        )
 
         finding = normalize(raw, output_dir=str(tmp_path))
         assert finding.raw_blob == raw

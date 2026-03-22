@@ -35,7 +35,9 @@ class RepoSandbox:
     @property
     def path(self) -> str:
         if self._tmpdir is None:
-            raise RuntimeError("Sandbox not entered — use 'with RepoSandbox(...) as sb:'")
+            raise RuntimeError(
+                "Sandbox not entered — use 'with RepoSandbox(...) as sb:'"
+            )
         return self._tmpdir
 
     def __enter__(self) -> RepoSandbox:
@@ -45,7 +47,12 @@ class RepoSandbox:
         self._run(["git", "clone", "--depth=1", clone_url, self._tmpdir])
         # Configure a git identity so commits don't fail in CI environments
         self._run(
-            ["git", "config", "user.email", "auto-security-patch[bot]@users.noreply.github.com"]
+            [
+                "git",
+                "config",
+                "user.email",
+                "auto-security-patch[bot]@users.noreply.github.com",
+            ]
         )
         self._run(["git", "config", "user.name", "auto-security-patch[bot]"])
         return self

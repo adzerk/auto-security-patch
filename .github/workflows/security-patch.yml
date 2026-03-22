@@ -32,7 +32,7 @@ on:
     secrets:
       ANTHROPIC_API_KEY:
         required: true
-      GH_PAT:
+      REPO_READ_TOKEN:
         required: true
 
 jobs:
@@ -70,7 +70,7 @@ jobs:
           TARGET_REPO: ${{ inputs.target_repo }}
           DRY_RUN: ${{ inputs.dry_run }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REPO_READ_TOKEN || secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v4
         if: always()
