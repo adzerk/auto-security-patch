@@ -17,15 +17,15 @@ flowchart TD
 
     S0 --> S1 --> S2 --> S2b
 
-    S2b -->|SUPPRESS| S6
+    S2b -->|"SUPPRESS (informational)"| S6
     S2b -->|NEEDS_INVESTIGATION| S6
     S2b -->|CONTRADICTED → override| S6
     S2b -->|PATCH| S3
+    S2b -->|"SUPPRESS (code change)"| S3
 
-    subgraph fix ["Fix loop (max 2 attempts)"]
+    subgraph fix ["Code change loop (max 2 attempts)"]
         S3["Stage 3 — Explorer\nDiscovers related files,\nexisting safe patterns"] --> S4
-        S4["Stage 4 — Fix Writer\nOutputs unified diff\n(read-only tools)"] --> Apply
-        Apply["Orchestrator\ngit apply patch"] --> S5
+        S4["Stage 4 — Fix Writer\nWrites fix or suppression markers\nvia write_file tool"] --> S5
         S5["Stage 5 — Validator\nRuns py_compile + flake8\nChecks struct integrity"]
         S5 -->|FAIL| S4
     end
@@ -36,7 +36,8 @@ flowchart TD
     S6["Stage 6 — PR Author\nLLM writes body text\nOrchestrator calls GitHub API"]
 
     S6 -->|PATCH| PR([Pull Request])
-    S6 -->|SUPPRESS| Issue1([Issue: suppress])
+    S6 -->|"SUPPRESS + code change"| PR2([Pull Request:\nsuppression markers])
+    S6 -->|"SUPPRESS (informational)"| Issue1([Issue: suppress])
     S6 -->|NEEDS_INVESTIGATION| Issue2([Issue: investigate])
     S6 -->|Pipeline failed| Issue3([Issue: failure report])
 ```
@@ -111,7 +112,8 @@ The pipeline fails fast with a clear error if it cannot extract `file_path` and 
 | Verdict | GitHub output |
 |---------|--------------|
 | `PATCH` | Pull request with diff, research summary, exploitability reasoning, reviewer checklist |
-| `SUPPRESS` | Issue with exact suppression comment to add and justification |
+| `SUPPRESS` (code change) | Pull request adding suppression markers (e.g. `# noqa`, `# nosec`) with justification |
+| `SUPPRESS` (informational) | Issue with suppression reasoning — no code change needed (dead code, test-only) |
 | `NEEDS_INVESTIGATION` | Issue with specific open questions for a human reviewer |
 | Pipeline failure | Issue with available context and failure details |
 

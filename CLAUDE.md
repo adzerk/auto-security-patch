@@ -48,16 +48,17 @@ Stage 1 — Researcher          pipeline/stages/researcher.py
   ▼
 Stage 2 — Assessor            pipeline/stages/assessor.py
   │  read_file + search → PATCH / SUPPRESS / NEEDS_INVESTIGATION
+  │  SUPPRESS includes SUPPRESSION_ACTION: CODE_CHANGE or INFORMATIONAL
   ▼
 Stage 2b — Assessment Verifier  pipeline/stages/verifier.py
   │  read_file + search_content → VERIFIED / PARTIALLY_VERIFIED / CONTRADICTED
   │  CONTRADICTED overrides verdict → NEEDS_INVESTIGATION (non-fatal if verifier fails)
   │
-  ├─ if PATCH ──────────────────────────────────────────────────┐
+  ├─ if PATCH or SUPPRESS+CODE_CHANGE ─────────────────────────┐
   │                                                              │
   │  Stage 3 — Explorer        pipeline/stages/explorer.py      │
   │  Stage 4 — Fix Writer      pipeline/stages/fix_writer.py    │
-  │    └─ orchestrator: git apply patch                         │
+  │    └─ writes fix or suppression markers via write_file      │
   │  Stage 5 — Validator       pipeline/stages/validator.py     │
   │    └─ FAIL → retry Stage 4 (max 2 attempts)                │
   │                                                              │
@@ -65,7 +66,8 @@ Stage 2b — Assessment Verifier  pipeline/stages/verifier.py
   ▼
 Stage 6 — PR Author           pipeline/pr_author.py
   LLM writes body text, orchestrator calls GitHubClient
-  PATCH → PR | SUPPRESS/NEEDS_INVESTIGATION/FAILED → issue
+  PATCH or SUPPRESS+CODE_CHANGE → PR
+  SUPPRESS(informational)/NEEDS_INVESTIGATION/FAILED → issue
 ```
 
 ### Key design constraints
@@ -95,6 +97,7 @@ Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude A
 | `tests/test_models.py` | `Finding`, `Verdict`, `Severity`, `PipelineContext` dataclasses and enum coercion |
 | `tests/test_tools.py` | Sandbox path traversal, symlink rejection, `run_command` allowlist, SSRF/`web_fetch` — the security-critical tool layer |
 | `tests/test_normalizer.py` | Stage 0 normalizer: Bandit JSON, SARIF, freeform text inputs; low-confidence rejection; missing tool_use block |
+| `tests/test_assessor.py` | Stage 2 assessor: `_parse_assessment` output parsing including `SUPPRESSION_ACTION` field (CODE_CHANGE/INFORMATIONAL/missing) |
 | `tests/test_verifier.py` | Stage 2b verifier: ref extraction, parse logic (VERIFIED/CONTRADICTED/NOT_FOUND), skip-when-no-refs, run_stage call contract |
 
 **Mocking pattern** (`test_normalizer.py`): patch `pipeline.normalizer.get_client` (not `pipeline.stages.base.get_client`) — the normalizer imports `get_client` by name, so the patch must target the module where it's used.
