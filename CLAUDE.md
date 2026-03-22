@@ -14,10 +14,16 @@ pip install -e ".[dev]"
 pip install flake8 pylint
 
 # Run all tests
-python -m pytest tests/
+python -m pytest tests/ -v
 
-# Run a single test
+# Run a single test file
+python -m pytest tests/test_tools.py -v
+
+# Run a single test by name
 python -m pytest tests/test_tools.py::TestRunCommand::test_disallowed_bash_rejected -v
+
+# Run tests matching a keyword
+python -m pytest tests/ -v -k "ssrf or sandbox"
 
 # Run pipeline locally (dry run)
 DRY_RUN=true ANTHROPIC_API_KEY=... GITHUB_TOKEN=... VULNERABILITY_DATA='...' TARGET_REPO=org/repo python -m pipeline.run_pipeline
@@ -74,6 +80,22 @@ Stage 6 — PR Author           pipeline/pr_author.py
 `agents/*.md` — loaded at runtime by `pipeline/stages/base.py:load_prompt()`. The path resolution goes up 3 levels from `pipeline/stages/base.py` to the repo root, then into `agents/`. If running from an installed wheel rather than source, ensure `agents/` is on the Python path or copy it alongside the package.
 
 ### Secrets required
+
+## Tests
+
+Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude API calls are mocked.
+
+| File | What it covers |
+|------|---------------|
+| `tests/test_models.py` | `Finding`, `Verdict`, `Severity`, `PipelineContext` dataclasses and enum coercion |
+| `tests/test_tools.py` | Sandbox path traversal, symlink rejection, `run_command` allowlist, SSRF/`web_fetch` — the security-critical tool layer |
+| `tests/test_normalizer.py` | Stage 0 normalizer: Bandit JSON, SARIF, freeform text inputs; low-confidence rejection; missing tool_use block |
+
+**Mocking pattern** (`test_normalizer.py`): patch `pipeline.normalizer.get_client` (not `pipeline.stages.base.get_client`) — the normalizer imports `get_client` by name, so the patch must target the module where it's used.
+
+**Fixtures** in `tests/fixtures/`: `bandit_finding.json`, `sarif_finding.json`, `freeform_finding.txt` — representative vulnerability blobs used by normalizer tests.
+
+**What is not unit-tested** (requires live API/git): the stage runners (`researcher`, `assessor`, `explorer`, `fix_writer`, `validator`), `RepoSandbox` git operations, and `GitHubClient`. These are exercised by the GitHub Actions dry-run workflow.
 
 | Secret | Purpose |
 |--------|---------|
