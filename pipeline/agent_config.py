@@ -108,6 +108,24 @@ TOOL_SCHEMAS: dict[str, dict] = {
             "required": ["check", "path"],
         },
     },
+    "write_file": {
+        "name": "write_file",
+        "description": "Write content to a file in the repository. Overwrites the file if it exists. Path is relative to repo root.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Relative path to the file to write (e.g. 'app.py' or 'src/db.py')",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "The full content to write to the file",
+                },
+            },
+            "required": ["path", "content"],
+        },
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -116,13 +134,18 @@ TOOL_SCHEMAS: dict[str, dict] = {
 
 STAGE_TOOLS: dict[str, list[str]] = {
     "normalizer": [],
-    "researcher": ["web_search", "web_fetch"],
-    "assessor": ["read_file", "list_files", "search_content"],
+    "vulnerability_researcher": ["web_search", "web_fetch"],
+    "exploitability_assessor": ["read_file", "list_files", "search_content"],
     "assessment_verifier": ["read_file", "search_content"],
-    "explorer": ["read_file", "list_files", "search_content"],
-    "fix_writer": ["read_file"],
-    "validator": ["read_file", "run_command"],
+    "codebase_explorer": ["read_file", "list_files", "search_content"],
+    "fix_writer": ["read_file", "write_file"],
+    "fix_validator": ["read_file", "run_command"],
     "pr_author": [],  # no tools — LLM writes body text only
+}
+
+# Per-stage model overrides. Stages not listed use the default MODEL from base.py.
+STAGE_MODELS: dict[str, str] = {
+    "exploitability_assessor": "claude-opus-4-6",
 }
 
 
@@ -130,3 +153,8 @@ def get_tools_for_stage(stage_name: str) -> list[dict]:
     """Return the list of tool schema dicts for a given pipeline stage."""
     tool_names = STAGE_TOOLS.get(stage_name, [])
     return [TOOL_SCHEMAS[name] for name in tool_names]
+
+
+def get_model_for_stage(stage_name: str) -> str | None:
+    """Return a model override for the given stage, or None to use the default."""
+    return STAGE_MODELS.get(stage_name)

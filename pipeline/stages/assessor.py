@@ -11,6 +11,7 @@ from pipeline.models import (
     ResearchReport,
     Verdict,
 )
+from pipeline.agent_config import get_model_for_stage
 from pipeline.stages.base import run_stage
 
 
@@ -20,12 +21,24 @@ def assess(
     *,
     sandbox_root: str,
     output_dir: str,
+    verifier_feedback: str | None = None,
 ) -> ExploitabilityAssessment:
     """Assess whether this specific instance is exploitable."""
+    feedback_context = ""
+    if verifier_feedback:
+        feedback_context = f"""\
+VERIFIER_FEEDBACK:
+A previous assessment was contradicted by the Stage 2b Verifier. Contradictions found:
+{verifier_feedback}
+
+Re-examine the cited file:line references above before forming your verdict.
+
+"""
+
     prompt = f"""\
 Assess the exploitability of the following finding.
 
---- STAGE 1: VULNERABILITY RESEARCH ---
+{feedback_context}--- STAGE 1: VULNERABILITY RESEARCH ---
 {research.raw_output}
 --- END STAGE 1 ---
 
@@ -47,6 +60,7 @@ RAW FINDING DATA:
         prompt,
         sandbox_root=sandbox_root,
         output_dir=output_dir,
+        model=get_model_for_stage("exploitability_assessor"),
     )
 
     return _parse_assessment(output)

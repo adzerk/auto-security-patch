@@ -112,6 +112,16 @@ def read_file(path: str, *, sandbox_root: str) -> str:
     return content
 
 
+def write_file(path: str, content: str, *, sandbox_root: str) -> str:
+    """Write content to a file inside the sandbox. Creates parent dirs if needed."""
+    if len(content.encode()) > MAX_READ_BYTES:
+        return f"Error: content too large (max {MAX_READ_BYTES} bytes)"
+    resolved = _resolve_sandboxed(path, sandbox_root)
+    os.makedirs(os.path.dirname(resolved), exist_ok=True)
+    Path(resolved).write_text(content)
+    return f"OK: wrote {path}"
+
+
 def list_files(pattern: str, *, sandbox_root: str) -> str:
     """Glob for files inside the sandbox. Returns newline-separated paths."""
     root = os.path.realpath(sandbox_root)
@@ -277,6 +287,7 @@ def run_command(check: str, path: str, *, sandbox_root: str) -> str:
 # Maps tool name → callable. The orchestrator passes sandbox_root as a kwarg.
 TOOL_REGISTRY: dict[str, callable] = {
     "read_file": read_file,
+    "write_file": write_file,
     "list_files": list_files,
     "search_content": search_content,
     "web_search": web_search,
@@ -295,7 +306,13 @@ def execute_tool(name: str, arguments: dict, *, sandbox_root: str) -> str:
         return f"Error: unknown tool '{name}'"
 
     # Inject sandbox_root for tools that accept it
-    needs_sandbox = name in ("read_file", "list_files", "search_content", "run_command")
+    needs_sandbox = name in (
+        "read_file",
+        "write_file",
+        "list_files",
+        "search_content",
+        "run_command",
+    )
     if needs_sandbox:
         arguments = {**arguments, "sandbox_root": sandbox_root}
 

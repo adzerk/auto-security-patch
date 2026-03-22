@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = "pipeline-output"
 MAX_FIX_ATTEMPTS = 2
+MAX_ASSESS_ATTEMPTS = 2
 
 
 def main() -> None:
@@ -106,65 +107,82 @@ def main() -> None:
             ctx.failure_reason = f"Stage 1 (Researcher) failed: {e}"
 
         # --------------------------------------------------------------
-        # Stage 2: Assess
+        # Stage 2 + 2b: Assess → Verify (with retry on CONTRADICTED)
         # --------------------------------------------------------------
         if not ctx.pipeline_failed:
-            logger.info("=== Stage 2: Exploitability Assessor ===")
-            try:
-                ctx.assessment = assess(
-                    ctx.finding,
-                    ctx.research,
-                    sandbox_root=sandbox_root,
-                    output_dir=OUTPUT_DIR,
-                )
+            verifier_feedback: str | None = None
+            for attempt in range(1, MAX_ASSESS_ATTEMPTS + 1):
                 logger.info(
-                    "Verdict: %s (confidence: %s)",
-                    ctx.assessment.verdict.value,
-                    ctx.assessment.confidence.value,
+                    "=== Stage 2: Exploitability Assessor (attempt %d/%d) ===",
+                    attempt,
+                    MAX_ASSESS_ATTEMPTS,
                 )
-            except Exception as e:
-                logger.error("Assessor failed: %s", e)
-                ctx.pipeline_failed = True
-                ctx.failure_reason = f"Stage 2 (Assessor) failed: {e}"
+                try:
+                    ctx.assessment = assess(
+                        ctx.finding,
+                        ctx.research,
+                        sandbox_root=sandbox_root,
+                        output_dir=OUTPUT_DIR,
+                        verifier_feedback=verifier_feedback,
+                    )
+                    logger.info(
+                        "Verdict: %s (confidence: %s)",
+                        ctx.assessment.verdict.value,
+                        ctx.assessment.confidence.value,
+                    )
+                except Exception as e:
+                    logger.error("Assessor failed: %s", e)
+                    ctx.pipeline_failed = True
+                    ctx.failure_reason = f"Stage 2 (Assessor) failed: {e}"
+                    break
 
-        # --------------------------------------------------------------
-        # Stage 2b: Assessment Verifier
-        # --------------------------------------------------------------
-        if not ctx.pipeline_failed:
-            logger.info("=== Stage 2b: Assessment Verifier ===")
-            try:
-                ctx.verification = verify_assessment(
-                    ctx.finding,
-                    ctx.assessment,
-                    sandbox_root=sandbox_root,
-                    output_dir=OUTPUT_DIR,
-                )
-                logger.info(
-                    "Verification: %s (%d refs checked, %d contradicted)",
-                    ctx.verification.verdict.value,
-                    ctx.verification.references_checked,
-                    ctx.verification.contradicted_count,
-                )
-                if ctx.verification.verdict == VerificationVerdict.CONTRADICTED:
+                logger.info("=== Stage 2b: Assessment Verifier ===")
+                try:
+                    ctx.verification = verify_assessment(
+                        ctx.finding,
+                        ctx.assessment,
+                        sandbox_root=sandbox_root,
+                        output_dir=OUTPUT_DIR,
+                    )
+                    logger.info(
+                        "Verification: %s (%d refs checked, %d contradicted)",
+                        ctx.verification.verdict.value,
+                        ctx.verification.references_checked,
+                        ctx.verification.contradicted_count,
+                    )
+                except Exception as e:
+                    logger.error("Assessment Verifier failed: %s", e)
+                    ctx.verification = None
+                    logger.warning(
+                        "Proceeding with unverified assessment: %s",
+                        ctx.assessment.verdict.value,
+                    )
+                    break
+
+                if ctx.verification.verdict != VerificationVerdict.CONTRADICTED:
+                    break
+
+                if attempt < MAX_ASSESS_ATTEMPTS:
+                    verifier_feedback = ctx.verification.contradiction_notes
+                    logger.warning(
+                        "Assessor contradicted by verifier, retrying with feedback (attempt %d)",
+                        attempt,
+                    )
+                else:
+                    # Exhausted retries — fall back to override
                     original_verdict = ctx.assessment.verdict
                     ctx.assessment.verdict = Verdict.NEEDS_INVESTIGATION
                     ctx.assessment.reasoning = (
-                        f"[ASSESSMENT OVERRIDDEN by Stage 2b Verifier: "
+                        f"[ASSESSMENT OVERRIDDEN after {MAX_ASSESS_ATTEMPTS} attempts: "
                         f"original verdict was {original_verdict.value}. "
                         f"Contradictions:\n{ctx.verification.contradiction_notes}]\n\n"
                         + ctx.assessment.reasoning
                     )
                     logger.warning(
-                        "Assessment overridden from %s to NEEDS_INVESTIGATION",
-                        original_verdict.value,
+                        "Assessment still CONTRADICTED after %d attempts, overriding to NEEDS_INVESTIGATION",
+                        MAX_ASSESS_ATTEMPTS,
                     )
-            except Exception as e:
-                logger.error("Assessment Verifier failed: %s", e)
-                ctx.verification = None
-                logger.warning(
-                    "Proceeding with unverified assessment: %s",
-                    ctx.assessment.verdict.value,
-                )
+                    break
 
         # --------------------------------------------------------------
         # Stages 3–5: Only if verdict is PATCH
@@ -215,18 +233,14 @@ def main() -> None:
                         previous_errors = str(e)
                         continue
 
-                    if not ctx.fix.patch:
-                        previous_errors = "Stage 4 output contained no PATCH block."
+                    # Check that files were actually modified
+                    changed_files = sandbox.get_changed_files()
+                    if not changed_files:
+                        previous_errors = "Stage 4 made no file changes."
                         logger.warning(previous_errors)
                         continue
-
-                    # Apply the patch
-                    logger.info("Applying patch via git apply...")
-                    success, apply_err = sandbox.apply_patch(ctx.fix.patch)
-                    if not success:
-                        previous_errors = f"git apply failed: {apply_err}"
-                        logger.warning(previous_errors)
-                        continue
+                    ctx.fix.changed_files = changed_files
+                    logger.info("Stage 4 modified files: %s", changed_files)
 
                     # Stage 5: Validate
                     logger.info("=== Stage 5: Fix Validator ===")
@@ -309,7 +323,7 @@ def main() -> None:
                 sandbox.create_branch(branch)
                 sandbox.commit(
                     f"fix: remediate {ctx.finding.title} in {ctx.finding.file_path}",
-                    files=[ctx.finding.file_path],
+                    files=ctx.fix.changed_files or None,
                 )
                 push_ok, push_err = sandbox.push(branch)
                 if not push_ok:

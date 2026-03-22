@@ -127,6 +127,11 @@ class RepoSandbox:
             if os.path.exists(patch_file):
                 os.unlink(patch_file)
 
+    def get_changed_files(self) -> list[str]:
+        """Return list of files modified since HEAD (staged or unstaged)."""
+        result = self._run(["git", "diff", "--name-only", "HEAD"], check=False)
+        return [f.strip() for f in result.stdout.splitlines() if f.strip()]
+
     def create_branch(self, branch_name: str) -> None:
         self._run(["git", "checkout", "-b", branch_name])
 

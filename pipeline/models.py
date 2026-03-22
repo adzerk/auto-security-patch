@@ -114,6 +114,7 @@ class FixResult:
 
     patch: str = ""
     change_summary: str = ""
+    changed_files: list = field(default_factory=list)
     raw_output: str = ""
 
 

@@ -114,7 +114,9 @@ ASSESSMENT_VERIFICATION_END
 
 
 def test_parse_verification_verified():
-    result = _parse_verification(_VERIFIED_OUTPUT, )
+    result = _parse_verification(
+        _VERIFIED_OUTPUT,
+    )
 
     assert result.verdict == VerificationVerdict.VERIFIED
     assert result.references_checked == 2
@@ -130,7 +132,9 @@ def test_parse_verification_verified():
 
 
 def test_parse_verification_contradicted():
-    result = _parse_verification(_CONTRADICTED_OUTPUT, )
+    result = _parse_verification(
+        _CONTRADICTED_OUTPUT,
+    )
 
     assert result.verdict == VerificationVerdict.CONTRADICTED
     assert result.references_checked == 1
@@ -144,7 +148,9 @@ def test_parse_verification_contradicted():
 
 
 def test_parse_verification_not_found():
-    result = _parse_verification(_NOT_FOUND_OUTPUT, )
+    result = _parse_verification(
+        _NOT_FOUND_OUTPUT,
+    )
 
     assert result.verdict == VerificationVerdict.PARTIALLY_VERIFIED
     assert result.references_checked == 1

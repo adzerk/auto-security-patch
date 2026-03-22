@@ -24,7 +24,7 @@ def write_fix(
     output_dir: str,
     previous_errors: str | None = None,
 ) -> FixResult:
-    """Write a minimal fix for the vulnerability as a unified diff patch."""
+    """Write a minimal fix for the vulnerability by directly modifying files."""
     retry_context = ""
     if previous_errors:
         retry_context = f"""
@@ -70,15 +70,6 @@ REPO_PATH: .
 def _parse_fix(output: str) -> FixResult:
     """Parse the delimited fix output from model output."""
     result = FixResult(raw_output=output)
-
-    # Extract patch between PATCH: and PATCH_END markers
-    patch_match = re.search(
-        r"^PATCH:\s*\n(.*?)^PATCH_END",
-        output,
-        re.MULTILINE | re.DOTALL,
-    )
-    if patch_match:
-        result.patch = patch_match.group(1).strip()
 
     # Extract change summary
     summary_match = re.search(
