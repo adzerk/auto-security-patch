@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "auto-security-patch"
 version = "0.1.0"
 description = "AI-powered security vulnerability remediation pipeline"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.42.0",
     "pydantic>=2.0",
