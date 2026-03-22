@@ -67,7 +67,7 @@ jobs:
       dry_run: false
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      REPO_READ_TOKEN: ${{ secrets.REPO_READ_TOKEN }}
+      REPO_WRITE_TOKEN: ${{ secrets.REPO_WRITE_TOKEN }}
 ```
 
 **Required secrets:**
@@ -75,7 +75,7 @@ jobs:
 | Secret | Scopes needed |
 |--------|--------------|
 | `ANTHROPIC_API_KEY` | Claude API |
-| `REPO_READ_TOKEN` | `contents:write`, `pull-requests:write`, `issues:write` on the target repo |
+| `REPO_WRITE_TOKEN` | `contents:write`, `pull-requests:write`, `issues:write` on the target repo |
 
 ### Local dry run
 

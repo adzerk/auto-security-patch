@@ -100,4 +100,4 @@ Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude A
 | Secret | Purpose |
 |--------|---------|
 | `ANTHROPIC_API_KEY` | Claude API calls |
-| `REPO_READ_TOKEN` | Push branches + create PRs/issues on target repo (needs `contents:write`, `pull-requests:write`, `issues:write`) |
+| `REPO_WRITE_TOKEN` | Push branches + create PRs/issues on target repo (needs `contents:write`, `pull-requests:write`, `issues:write`) |
