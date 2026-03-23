@@ -26,3 +26,9 @@ pytest = ">=8.0"
 black = ">=24.0"
 flake8 = ">=7.0"
 pylint = ">=3.0"
+
+[tool.poetry.group.e2e.dependencies]
+bandit = ">=1.7"
+
+[tool.pytest.ini_options]
+markers = ["e2e: end-to-end tests requiring API keys (deselect by default)"]

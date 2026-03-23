@@ -42,6 +42,10 @@ env/
 *.swo
 *~
 
+# E2E output
+e2e-output/
+pipeline-output/
+
 # OS
 .DS_Store
 .env
