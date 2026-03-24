@@ -1,0 +1,22 @@
+{
+  "id": "dd-finding-001",
+  "type": "code_security",
+  "message": "CWE-89: SQL Injection vulnerability detected in database query construction. User input is concatenated directly into SQL query string without parameterization.",
+  "severity": "critical",
+  "status": "open",
+  "tags": [
+    "repo:acme/webapp",
+    "env:production",
+    "git_repository:https://github.com/acme/webapp",
+    "cwe:CWE-89"
+  ],
+  "resource": "acme/webapp",
+  "finding_type": "sast",
+  "file_path": "src/db/queries.py",
+  "line_number": 42,
+  "rule": {
+    "id": "python-security/sql-injection",
+    "name": "SQL Injection",
+    "severity": "critical"
+  }
+}

@@ -28,6 +28,10 @@ poetry run pytest tests/ -v -k "ssrf or sandbox"
 
 # Run pipeline locally (dry run)
 DRY_RUN=true ANTHROPIC_API_KEY=... GITHUB_TOKEN=... VULNERABILITY_DATA='...' TARGET_REPO=org/repo poetry run python -m pipeline.run_pipeline
+
+# Run Datadog poller (fetches critical code-security findings, dispatches pipeline per-finding)
+DD_API_KEY=... DD_APP_KEY=... ANTHROPIC_API_KEY=... GITHUB_TOKEN=... DRY_RUN=true poetry run python -m pipeline.datadog_poller
+# Optional: DD_REPOS=org/repo1,org/repo2 to restrict to specific repos
 ```
 
 ## Architecture
@@ -99,10 +103,12 @@ Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude A
 | `tests/test_normalizer.py` | Stage 0 normalizer: Bandit JSON, SARIF, freeform text inputs; low-confidence rejection; missing tool_use block |
 | `tests/test_assessor.py` | Stage 2 assessor: `_parse_assessment` output parsing including `SUPPRESSION_ACTION` field (CODE_CHANGE/INFORMATIONAL/missing) |
 | `tests/test_verifier.py` | Stage 2b verifier: ref extraction, parse logic (VERIFIED/CONTRADICTED/NOT_FOUND), skip-when-no-refs, run_stage call contract |
+| `tests/test_datadog_client.py` | Datadog API client: pagination, error handling, filter query, custom site |
+| `tests/test_datadog_poller.py` | Datadog poller: finding dispatch, deduplication, repo derivation, allowlist filtering |
 
 **Mocking pattern** (`test_normalizer.py`): patch `pipeline.normalizer.get_client` (not `pipeline.stages.base.get_client`) — the normalizer imports `get_client` by name, so the patch must target the module where it's used.
 
-**Fixtures** in `tests/fixtures/`: `bandit_finding.json`, `sarif_finding.json`, `freeform_finding.txt` — representative vulnerability blobs used by normalizer tests.
+**Fixtures** in `tests/fixtures/`: `bandit_finding.json`, `sarif_finding.json`, `freeform_finding.txt`, `datadog_finding.json` — representative vulnerability blobs used by normalizer and integration tests.
 
 **What is not unit-tested** (requires live API/git): the stage runners (`researcher`, `assessor`, `explorer`, `fix_writer`, `validator`), `RepoSandbox` git operations, and `GitHubClient`. These are exercised by the GitHub Actions dry-run workflow.
 
@@ -110,3 +116,5 @@ Runner: `pytest`. All tests are in `tests/` and require no API keys — Claude A
 |--------|---------|
 | `ANTHROPIC_API_KEY` | Claude API calls |
 | `REPO_WRITE_TOKEN` | Push branches + create PRs/issues on target repo (needs `contents:write`, `pull-requests:write`, `issues:write`) |
+| `DD_API_KEY` | Datadog API key (poller only) |
+| `DD_APP_KEY` | Datadog Application key (poller only) |
